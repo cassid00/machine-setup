@@ -37,7 +37,7 @@ Describe 'setup.ps1' {
         Set-EditorTheme -Name 'VS Code' -SettingsDir 'Code'
 
         $settings = Get-Content -Raw -Path $settingsPath | ConvertFrom-Json
-        $settings.'workbench.colorTheme' | Should -Be 'Default Dark+'
+        $settings.'workbench.colorTheme' | Should -Be 'Light 2026'
         $settings.'editor.fontSize' | Should -Be 14
     }
 

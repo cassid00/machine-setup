@@ -30,7 +30,7 @@ load_script() {
 
     run jq -r '.["workbench.colorTheme"]' "$settings_file"
     [ "$status" -eq 0 ]
-    [ "$output" = "Default Dark+" ]
+    [ "$output" = "Light 2026" ]
 
     run jq -r '.["editor.fontSize"]' "$settings_file"
     [ "$status" -eq 0 ]

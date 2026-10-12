@@ -1,6 +1,6 @@
 {
   "shared": {
-    "vscode_theme": "Default Dark+",
+    "vscode_theme": "Light 2026",
     "vs_code_extensions": [
       "GitHub.copilot",
       "GitHub.copilot-chat",
@@ -81,7 +81,7 @@
       },
       {
         "name": "VS Code Insiders",
-        "binary": "/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code-insiders",
+        "binary": "/Applications/Visual Studio Code - Insiders.app/Contents/Resources/app/bin/code",
         "command": "code-insiders",
         "settings_dir": "Code - Insiders"
       }
