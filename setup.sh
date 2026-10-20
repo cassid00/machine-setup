@@ -24,6 +24,7 @@ readonly ERROR="❌"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 readonly CONFIG_FILE="$SCRIPT_DIR/config.json"
+readonly DEMO_LAUNCHER_REPO="octobooth-demos/repo-setup-scripts"
 
 # When true, skip detection is bypassed and everything is reinstalled
 FORCE_REINSTALL="${FORCE_REINSTALL:-false}"
@@ -401,11 +402,64 @@ clone_repos() {
     done
 }
 
+# Path of the repo-setup-scripts checkout the Demo Launcher loader imports from
+demo_launcher_repo_dir() {
+    echo "$HOME/repos/${DEMO_LAUNCHER_REPO##*/}"
+}
+
+# Checks what the Demo Launcher needs (gh, git, jq and a gh login with the
+# configured scopes). Login is interactive, so this only says what to run.
+# Returns 1 if the launcher can't be installed yet.
+check_demo_launcher_prereqs() {
+    local cmd missing_cmds=()
+    for cmd in gh git jq; do
+        command -v "$cmd" &> /dev/null || missing_cmds+=("$cmd")
+    done
+    if [[ ${#missing_cmds[@]} -gt 0 ]]; then
+        log_error "Missing ${missing_cmds[*]}. Install with: brew install gh jq"
+        return 1
+    fi
+
+    local scopes
+    scopes=$(IFS=,; echo "${gh_auth_scopes[*]}")
+    if ! gh_stored_auth auth status -h github.com &> /dev/null; then
+        log_error "GitHub CLI is not logged in. Run: gh auth login -h github.com${scopes:+ -s $scopes}"
+        return 1
+    fi
+
+    local missing
+    missing=$(gh_missing_scopes | paste -sd, -)
+    if [[ -n "$missing" ]]; then
+        log_warn "GitHub CLI login is missing scopes the demos need. Run: gh auth refresh -h github.com -s $missing"
+    fi
+}
+
+# Clones repo-setup-scripts, or fast-forwards an existing checkout so the
+# loader (which imports from it) picks up Demo Launcher updates
+sync_demo_launcher_repo() {
+    local target
+    target=$(demo_launcher_repo_dir)
+
+    if [[ -d "$target/.git" ]]; then
+        log_info "Updating ${target/#$HOME/~}..."
+        git -C "$target" pull --ff-only --quiet ||
+            log_warn "Could not fast-forward ${target/#$HOME/~}; using it as is"
+    else
+        mkdir -p "$(dirname "$target")"
+        try_install "clone: $DEMO_LAUNCHER_REPO" gh repo clone "$DEMO_LAUNCHER_REPO" "$target"
+    fi
+}
+
 # Makes the Demo Launcher canvas (from repo-setup-scripts) available in every
 # Copilot session; skipped until the cloned repo ships the extension
 install_demo_launcher() {
-    local installer="$HOME/repos/repo-setup-scripts/.github/extensions/demo-launcher/install.sh"
+    local installer
+    installer="$(demo_launcher_repo_dir)/.github/extensions/demo-launcher/install.sh"
     local loader="${COPILOT_HOME:-$HOME/.copilot}/extensions/demo-launcher/extension.mjs"
+
+    if [[ -d "$(demo_launcher_repo_dir)/.git" ]]; then
+        sync_demo_launcher_repo
+    fi
 
     if [[ ! -f "$installer" ]]; then
         log_info "Demo Launcher not found in repo-setup-scripts, skipping..."

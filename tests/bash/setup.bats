@@ -346,3 +346,65 @@ STUB
     install_demo_launcher
     [ "$(wc -l < "$INSTALL_LOG")" -eq 2 ]
 }
+
+@test "install_demo_launcher fast-forwards an existing repo-setup-scripts clone" {
+    local origin="$BATS_TEST_TMPDIR/origin.git"
+    local repo="$HOME/repos/repo-setup-scripts"
+    git init -q --bare "$origin"
+    git clone -q "$origin" "$repo"
+    git -C "$repo" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+    git -C "$repo" push -q origin HEAD
+
+    local other="$BATS_TEST_TMPDIR/other"
+    git clone -q "$origin" "$other"
+    mkdir -p "$other/.github/extensions/demo-launcher"
+    printf '#!/bin/bash\necho run >> "$INSTALL_LOG"\n' > "$other/.github/extensions/demo-launcher/install.sh"
+    git -C "$other" add -A
+    git -C "$other" -c user.name=t -c user.email=t@t commit -q -m launcher
+    git -C "$other" push -q origin HEAD
+
+    export INSTALL_LOG="$BATS_TEST_TMPDIR/install.log"
+    load_script
+
+    install_demo_launcher
+
+    [[ -f "$repo/.github/extensions/demo-launcher/install.sh" ]]
+    [ "$(wc -l < "$INSTALL_LOG")" -eq 1 ]
+}
+
+@test "check_demo_launcher_prereqs fails with login instructions when gh is logged out" {
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    printf '#!/bin/bash\nexit 1\n' > "$BATS_TEST_TMPDIR/bin/gh"
+    chmod +x "$BATS_TEST_TMPDIR/bin/gh"
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+    load_script
+    load_config
+
+    run check_demo_launcher_prereqs
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"gh auth login -h github.com -s codespace,delete_repo"* ]]
+}
+
+@test "check_demo_launcher_prereqs warns about missing scopes but continues" {
+    stub_gh_auth
+    export GH_SCOPES="'codespace', 'repo'"
+    load_script
+    load_config
+
+    run check_demo_launcher_prereqs
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gh auth refresh -h github.com -s delete_repo"* ]]
+}
+
+@test "sourcing install-demo-launcher.sh does not execute it" {
+    source "$REPO_ROOT/install-demo-launcher.sh"
+
+    [[ ! -e "$HOME/repos" ]]
+    declare -f demo_launcher_main > /dev/null
+}
+
+@test "install-demo-launcher.sh rejects unknown arguments" {
+    run bash "$REPO_ROOT/install-demo-launcher.sh" --bogus
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Usage:"* ]]
+}
