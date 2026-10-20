@@ -14,7 +14,7 @@ This repository contains setup scripts for configuring booth machines. The scrip
 - Configures VLC media player settings.
 - Creates a demo loader script to launch the required applications and sites.
 - Registers shared MCP servers for Copilot CLI.
-- Clones the demo repos into `~/repos` and, on macOS, installs the Demo Launcher canvas for every Copilot session (see [Demo Launcher](#demo-launcher)).
+- Clones the demo repos into `~/repos` and, on macOS, installs the Demo Launcher canvas for every Copilot session. `install-demo-launcher.sh` does just that step on a machine that is already set up (see [Demo Launcher](#demo-launcher)).
 
 ## Configuration
 
@@ -75,13 +75,25 @@ This repository contains setup scripts for configuring booth machines. The scrip
 2. Add `~/repos/repo-setup-scripts` (or `octobooth-demos/repo-setup-scripts`) as a project.
 3. Start a session in that project and ask Copilot to "open the demo launcher".
 
-On macOS, `setup.sh` also runs the repo's `.github/extensions/demo-launcher/install.sh` (when present) so the canvas is available in every Copilot session, not just the repo-setup-scripts project. Restart open sessions to pick it up. To do this manually, or after pulling an update that adds the launcher, run:
+On macOS, `setup.sh` also installs it for every Copilot session, not just the repo-setup-scripts project: it fast-forwards an existing `~/repos/repo-setup-scripts` checkout (`git pull --ff-only`) and runs the repo's `.github/extensions/demo-launcher/install.sh` when present. That writes a loader to `${COPILOT_HOME:-~/.copilot}/extensions/demo-launcher/extension.mjs` that imports the launcher from the checkout, so later pulls update it.
+
+### Install or update on a machine that's already set up
+
+From this folder, run:
 
 ```bash
-bash ~/repos/repo-setup-scripts/.github/extensions/demo-launcher/install.sh
+bash install-demo-launcher.sh
 ```
 
-`install.sh` is macOS/Linux only, so on Windows use the Demo Launcher from a session in the repo-setup-scripts project.
+It's safe to re-run. It:
+
+1. Checks for `gh`, `git`, and `jq` (`brew install gh jq`) and that the GitHub CLI is logged in. Logging in is interactive, so if it isn't, the script prints the `gh auth login` command to run and stops. It also warns if the login is missing the `codespace`/`delete_repo` scopes (`gh auth refresh -h github.com -s codespace,delete_repo`).
+2. Clones `octobooth-demos/repo-setup-scripts` to `~/repos/repo-setup-scripts`, or pulls it if it's already there.
+3. Runs `install.sh` to (re)write the loader.
+
+Then restart the GitHub Copilot app (or reload extensions) and ask Copilot to "open the demo launcher" in any session to check it works. To remove it, run `bash install-demo-launcher.sh --uninstall`.
+
+`install.sh` is macOS/Linux only, so on Windows use the Demo Launcher from a session in the repo-setup-scripts project. For more on the Demo Launcher itself, see the [repo-setup-scripts quick start](https://github.com/octobooth-demos/repo-setup-scripts#quick-start-booth-machine).
 
 ## Development and Testing
 
@@ -92,8 +104,8 @@ The GitHub Actions workflow validates syntax, linting, configuration shape, and 
 #### Bash
 
 ```bash
-shellcheck setup.sh
-bash -n setup.sh
+shellcheck -x setup.sh install-demo-launcher.sh
+bash -n setup.sh && bash -n install-demo-launcher.sh
 bats tests/bash
 ```
 

@@ -50,10 +50,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install --yes shellcheck
-      - name: Lint setup.sh
-        run: shellcheck --severity=warning setup.sh
-      - name: Parse setup.sh
-        run: bash -n setup.sh
+      - name: Lint bash scripts
+        run: shellcheck --severity=warning -x setup.sh install-demo-launcher.sh
+      - name: Parse bash scripts
+        run: bash -n setup.sh && bash -n install-demo-launcher.sh
 
   test-bash:
     name: Test bash
