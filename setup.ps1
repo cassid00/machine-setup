@@ -127,7 +127,8 @@ function Install-WingetPackage {
 
     $description = "winget: $PackageId"
     try {
-        $output = winget install --id $PackageId -e --accept-source-agreements --accept-package-agreements --silent 2>&1
+        # Use the winget source to avoid unrelated Microsoft Store certificate failures.
+        $output = winget install --id $PackageId -e --source winget --accept-source-agreements --accept-package-agreements --silent 2>&1
         $exitCode = $LASTEXITCODE
 
         if ($script:WingetSuccessExitCodes -contains $exitCode) {

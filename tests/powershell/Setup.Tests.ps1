@@ -85,6 +85,19 @@ Describe 'setup.ps1' {
         $script:failedItems | Should -Contain 'example failure'
     }
 
+    It 'Install-WingetPackage explicitly selects the winget source' {
+        $wingetLog = Join-Path $TestDrive 'winget.log'
+        function global:winget {
+            Set-Content -Path $wingetLog -Value ($args -join ' ')
+            $global:LASTEXITCODE = 0
+        }
+
+        Install-WingetPackage -PackageId 'Microsoft.VisualStudioCode'
+
+        (Get-Content -Path $wingetLog -Raw).Trim() | Should -Be 'install --id Microsoft.VisualStudioCode -e --source winget --accept-source-agreements --accept-package-agreements --silent'
+        $script:failedItems | Should -BeNullOrEmpty
+    }
+
     It 'Install-WingetPackage treats "already installed" exit code as success' {
         function global:winget { $global:LASTEXITCODE = -1978335135 }
 
