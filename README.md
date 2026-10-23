@@ -89,7 +89,7 @@ The setup scripts handle this for you, but check it on every booth machine (and 
    `gh`'s default scopes (`repo`, `read:org`, `gist`) cover everything else.
 3. Check it with `gh auth status`. It should show the booth account as active, with `codespace` and `delete_repo` in its token scopes.
 
-The booth account must be a member of the `octobooth-demos` org and allowed to create repositories there, because several demos create their repo in that org.
+The booth account must be a member of the `octobooth-demos` org and allowed to create repositories there, because several demos create their repo in that org. It also needs a Copilot seat for the demos that use Copilot code review, assigning issues to Copilot, and Codespaces.
 
 If `GH_TOKEN` or `GITHUB_TOKEN` is set, `gh` uses that token instead of this login, and `gh auth refresh` won't run. Unset them on booth machines.
 
