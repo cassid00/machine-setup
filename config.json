@@ -52,7 +52,8 @@
     ],
     "gh_auth_scopes": [
       "codespace",
-      "delete_repo"
+      "delete_repo",
+      "project"
     ],
     "repos_to_clone": [
       "octobooth-demos/repo-setup-scripts",

@@ -27,7 +27,7 @@ This repository contains setup scripts for configuring booth machines. The scrip
 
 `mac.iterm2` controls the iTerm2 theme. `setup.sh` takes the colors from `color_scheme_file` (stored in [`iterm2/`](iterm2/README.md)), adds them to iTerm2's Color Presets as `color_preset`, and applies them and `font` to iTerm2's default profile. If iTerm2 has never been opened, it creates that "Default" profile. The `font-monaspace` cask provides Monaspace Neon (the iTerm2 font), and `font-mona-sans` installs Mona Sans. The `font-sf-mono` cask installs SF Mono from Apple and asks for an admin password. Quit iTerm2 before running setup, because iTerm2 overwrites preference changes when it quits. Once the theme is applied, later runs leave the profile alone unless `FORCE_REINSTALL=true`.
 
-`shared.gh_auth_scopes` lists the extra scopes the GitHub CLI login needs: `codespace` (the Tailspin Toys demo creates a Codespace) and `delete_repo` (the Demo Launcher's cleanup deletes demo repos). A new login requests them, and an existing login missing any of them is upgraded with `gh auth refresh`, which opens a browser to approve. Both scripts ignore `GH_TOKEN`/`GITHUB_TOKEN` for these steps so the stored login is the one updated. To do it by hand, see [GitHub CLI login](#github-cli-login).
+`shared.gh_auth_scopes` lists the extra scopes the GitHub CLI login needs: `codespace` (the Tailspin Toys demo creates a Codespace), `delete_repo` (the Demo Launcher's cleanup deletes demo repos), and `project` (the Copilot Airways demo creates a GitHub Project, and cleanup deletes it). A new login requests them, and an existing login missing any of them is upgraded with `gh auth refresh`, which opens a browser to approve. Both scripts ignore `GH_TOKEN`/`GITHUB_TOKEN` for these steps so the stored login is the one updated. To do it by hand, see [GitHub CLI login](#github-cli-login).
 
 `pwa_sites` currently remains in the schema for future use, but PWA setup is intentionally disabled in both scripts until the booth workflow needs it again.
 
@@ -105,14 +105,15 @@ The setup scripts handle this for you, but check it on every booth machine (and 
 2. Add the extra scopes the demos need:
 
    ```bash
-   gh auth refresh -h github.com -s codespace,delete_repo
+   gh auth refresh -h github.com -s codespace,delete_repo,project
    ```
 
    - `codespace`: the Tailspin Toys demo creates a Codespace.
    - `delete_repo`: the Demo Launcher's cleanup deletes old demo repos.
+   - `project`: the Copilot Airways demo creates a GitHub Project, and cleanup deletes it.
 
    `gh`'s default scopes (`repo`, `read:org`, `gist`) cover everything else.
-3. Check it with `gh auth status`. It should show the booth account as active, with `codespace` and `delete_repo` in its token scopes.
+3. Check it with `gh auth status`. It should show the booth account as active, with `codespace`, `delete_repo`, and `project` in its token scopes.
 
 The booth account must be a member of the `octobooth-demos` org and allowed to create repositories there, because several demos create their repo in that org. It also needs a Copilot seat for the demos that use Copilot code review, assigning issues to Copilot, and Codespaces.
 
@@ -165,7 +166,7 @@ bash install-demo-launcher.sh
 
 It's safe to re-run. It:
 
-1. Checks for `gh`, `git`, and `jq` (`brew install gh jq`) and that the GitHub CLI is logged in. Logging in is interactive, so if it isn't, the script prints the `gh auth login` command to run and stops. It also warns if the login is missing the `codespace`/`delete_repo` scopes (`gh auth refresh -h github.com -s codespace,delete_repo`).
+1. Checks for `gh`, `git`, and `jq` (`brew install gh jq`) and that the GitHub CLI is logged in. Logging in is interactive, so if it isn't, the script prints the `gh auth login` command to run and stops. It also warns if the login is missing the `codespace`/`delete_repo`/`project` scopes (`gh auth refresh -h github.com -s codespace,delete_repo,project`).
 2. Clones `octobooth-demos/repo-setup-scripts` to `~/repos/repo-setup-scripts`, or pulls it if it's already there.
 3. Runs `install.sh` to (re)write the loader.
 
