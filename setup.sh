@@ -535,7 +535,8 @@ gh_missing_scopes() {
 }
 
 # Ensures the GitHub CLI login has the configured scopes (codespace for
-# Codespace demos, delete_repo for the Demo Launcher's cleanup)
+# Codespace demos, delete_repo for the Demo Launcher's cleanup, project for
+# the Copilot Airways demo's GitHub Project and its cleanup)
 ensure_gh_scopes() {
     if [[ ${#gh_auth_scopes[@]} -eq 0 ]]; then
         return 0
