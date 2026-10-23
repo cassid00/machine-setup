@@ -136,8 +136,8 @@ red_component() {
     printf '%.4f' "$(prefs_value "$1:Red Component")"
 }
 
-@test "config installs iTerm2 and SF Mono casks" {
-    run jq -e '.mac.packages.casks | index("iterm2") and index("font-sf-mono")' "$REPO_ROOT/config.json"
+@test "config installs iTerm2 and font casks" {
+    run jq -e '.mac.packages.casks | index("iterm2") and index("font-sf-mono") and index("font-monaspace") and index("font-mona-sans")' "$REPO_ROOT/config.json"
     [ "$status" -eq 0 ]
 
     run plutil -lint -s "$REPO_ROOT/$(jq -r '.mac.iterm2.color_scheme_file' "$REPO_ROOT/config.json")"
@@ -166,7 +166,7 @@ red_component() {
     [ "$output" = "false" ]
 
     run prefs_value ":New Bookmarks:0:Normal Font"
-    [ "$output" = "SFMono-Regular 12" ]
+    [ "$output" = "MonaspaceNeon-Regular 12" ]
 
     run red_component ":Custom Color Presets:GitHub Dark Default:Background Color"
     [ "$output" = "0.0510" ]
@@ -204,7 +204,7 @@ red_component() {
     [ "$output" = "0.0510" ]
 
     run prefs_value ":New Bookmarks:1:Normal Font"
-    [ "$output" = "SFMono-Regular 12" ]
+    [ "$output" = "MonaspaceNeon-Regular 12" ]
 
     run prefs_value ":New Bookmarks:1:Use Separate Colors for Light and Dark Mode"
     [ "$output" = "false" ]
@@ -237,7 +237,7 @@ red_component() {
     FORCE_REINSTALL=true
     configure_iterm2
     run prefs_value ":New Bookmarks:0:Normal Font"
-    [ "$output" = "SFMono-Regular 12" ]
+    [ "$output" = "MonaspaceNeon-Regular 12" ]
 
     run prefs_value ":New Bookmarks:1"
     [ "$status" -ne 0 ]
