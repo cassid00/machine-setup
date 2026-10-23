@@ -54,6 +54,7 @@ demo_launcher_main() {
 
     log_success "Demo Launcher installed"
     log_info "Restart the GitHub Copilot app (or reload extensions), then ask Copilot to \"open the demo launcher\" in any session."
+    log_info "Don't also add repo-setup-scripts as a project in the Copilot app, or the Demo Launcher shows up twice."
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

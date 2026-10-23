@@ -26,7 +26,7 @@ This repository contains setup scripts for configuring booth machines. The scrip
 
 `mac.iterm2` controls the iTerm2 theme. `setup.sh` takes the colors from `color_scheme_file` (stored in [`iterm2/`](iterm2/README.md)), adds them to iTerm2's Color Presets as `color_preset`, and applies them and `font` to iTerm2's default profile. If iTerm2 has never been opened, it creates that "Default" profile. The `font-sf-mono` cask installs SF Mono from Apple and asks for an admin password. Quit iTerm2 before running setup, because iTerm2 overwrites preference changes when it quits. Once the theme is applied, later runs leave the profile alone unless `FORCE_REINSTALL=true`.
 
-`shared.gh_auth_scopes` lists the extra scopes the GitHub CLI login needs: `codespace` (the Tailspin Toys demo creates a Codespace) and `delete_repo` (the Demo Launcher's cleanup deletes demo repos). A new login requests them, and an existing login missing any of them is upgraded with `gh auth refresh`, which opens a browser to approve. Both scripts ignore `GH_TOKEN`/`GITHUB_TOKEN` for these steps so the stored login is the one updated. To add them by hand, run `gh auth refresh -h github.com -s codespace,delete_repo`.
+`shared.gh_auth_scopes` lists the extra scopes the GitHub CLI login needs: `codespace` (the Tailspin Toys demo creates a Codespace) and `delete_repo` (the Demo Launcher's cleanup deletes demo repos). A new login requests them, and an existing login missing any of them is upgraded with `gh auth refresh`, which opens a browser to approve. Both scripts ignore `GH_TOKEN`/`GITHUB_TOKEN` for these steps so the stored login is the one updated. To do it by hand, see [GitHub CLI login](#github-cli-login).
 
 `pwa_sites` currently remains in the schema for future use, but PWA setup is intentionally disabled in both scripts until the booth workflow needs it again.
 
@@ -67,6 +67,32 @@ This repository contains setup scripts for configuring booth machines. The scrip
 6. A launcher script is created on the Desktop.
 7. Store booth videos in `C:\Users\<YourUsername>\Videos` so the launcher opens them in VLC.
 
+### GitHub CLI login
+
+The setup scripts handle this for you, but check it on every booth machine (and do it by hand if a script warned about it):
+
+1. Log in as the **booth account** (for example `octobooth-1`), not your personal account. Choose GitHub.com, HTTPS, and log in with a web browser:
+
+   ```bash
+   gh auth login -h github.com
+   ```
+
+2. Add the extra scopes the demos need:
+
+   ```bash
+   gh auth refresh -h github.com -s codespace,delete_repo
+   ```
+
+   - `codespace`: the Tailspin Toys demo creates a Codespace.
+   - `delete_repo`: the Demo Launcher's cleanup deletes old demo repos.
+
+   `gh`'s default scopes (`repo`, `read:org`, `gist`) cover everything else.
+3. Check it with `gh auth status`. It should show the booth account as active, with `codespace` and `delete_repo` in its token scopes.
+
+The booth account must be a member of the `octobooth-demos` org and allowed to create repositories there, because several demos create their repo in that org. It also needs a Copilot seat for the demos that use Copilot code review, assigning issues to Copilot, and Codespaces.
+
+If `GH_TOKEN` or `GITHUB_TOKEN` is set, `gh` uses that token instead of this login, and `gh auth refresh` won't run. Unset them on booth machines.
+
 ### Troubleshooting Windows package installs
 
 WinGet error `-1978335138` (`0x8A15005E`, pinned certificate mismatch) can occur when querying the Microsoft Store source, even for a package available from the `winget` source. See [microsoft/winget-cli#3109](https://github.com/microsoft/winget-cli/issues/3109). [`setup.ps1`](setup.ps1) explicitly selects `--source winget` to avoid these unrelated Store failures while preserving certificate validation. All entries in `windows.packages` in [`config.json`](config.json) must be available from the `winget` source.
@@ -83,11 +109,23 @@ If the error persists, update App Installer through Microsoft Store and check wh
 
 [`octobooth-demos/repo-setup-scripts`](https://github.com/octobooth-demos/repo-setup-scripts) (cloned to `~/repos/repo-setup-scripts`) ships a **Demo Launcher** canvas for the GitHub Copilot app. It creates booth demos in the background with `create-repo.sh`/`create-repo.ps1`, opens sessions for them in the Copilot app, and cleans up old demo repos.
 
+Use **one** of these two install methods per machine, never both. If the Copilot app sees both, it lists two "Demo Launcher" canvases (see [Two Demo Launchers show up](#two-demo-launchers-show-up)).
+
+### macOS (and Linux): installed loader
+
+1. On macOS, run `setup.sh`. On Linux, or a Mac that's already set up, run `install-demo-launcher.sh` (see below). Either one clones the repo to `~/repos/repo-setup-scripts` and runs its `install.sh`.
+2. Open the GitHub Copilot app and sign in with the booth/demo account. **Don't** add `repo-setup-scripts` as a project or repository.
+3. In any session, ask Copilot to "open the demo launcher".
+
+`setup.sh` fast-forwards an existing `~/repos/repo-setup-scripts` checkout (`git pull --ff-only`) and runs the repo's `.github/extensions/demo-launcher/install.sh` when present. That writes a loader to `${COPILOT_HOME:-~/.copilot}/extensions/demo-launcher/extension.mjs` that imports the launcher from the checkout, so later pulls update it.
+
+### Windows: repo-setup-scripts project
+
+`install.sh` is macOS/Linux only, so on Windows the project is the only way to get the launcher. Don't also install a loader.
+
 1. Open the GitHub Copilot app and sign in with the booth/demo account.
 2. Add `~/repos/repo-setup-scripts` (or `octobooth-demos/repo-setup-scripts`) as a project.
 3. Start a session in that project and ask Copilot to "open the demo launcher".
-
-On macOS, `setup.sh` also installs it for every Copilot session, not just the repo-setup-scripts project: it fast-forwards an existing `~/repos/repo-setup-scripts` checkout (`git pull --ff-only`) and runs the repo's `.github/extensions/demo-launcher/install.sh` when present. That writes a loader to `${COPILOT_HOME:-~/.copilot}/extensions/demo-launcher/extension.mjs` that imports the launcher from the checkout, so later pulls update it.
 
 ### Install or update on a machine that's already set up
 
@@ -105,7 +143,18 @@ It's safe to re-run. It:
 
 Then restart the GitHub Copilot app (or reload extensions) and ask Copilot to "open the demo launcher" in any session to check it works. To remove it, run `bash install-demo-launcher.sh --uninstall`.
 
-`install.sh` is macOS/Linux only, so on Windows use the Demo Launcher from a session in the repo-setup-scripts project. For more on the Demo Launcher itself, see the [repo-setup-scripts quick start](https://github.com/octobooth-demos/repo-setup-scripts#quick-start-booth-machine).
+### Two Demo Launchers show up
+
+This happens when the loader is installed **and** `repo-setup-scripts` is added as a project in the Copilot app. The app loads the loader (`user:demo-launcher`) and the project's own copy (`project:demo-launcher`) and shows both everywhere, not just in that project. The two can also drift if they come from separate checkouts.
+
+To fix it on macOS/Linux:
+
+1. In the Copilot app, remove `repo-setup-scripts` from your projects/repositories. Keep the clone in `~/repos/repo-setup-scripts`, because the loader imports from it.
+2. Restart the Copilot app.
+
+On Windows, keep the project and remove any loader instead.
+
+For more on the Demo Launcher itself, see the [repo-setup-scripts quick start](https://github.com/octobooth-demos/repo-setup-scripts#quick-start-booth-machine).
 
 ## Development and Testing
 
