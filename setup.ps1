@@ -26,6 +26,7 @@
 $script:configPath = Join-Path $PSScriptRoot "config.json"
 $script:failedItems = @()
 $script:ForceReinstall = $env:FORCE_REINSTALL -eq "true"
+$script:NonInteractive = $env:NONINTERACTIVE -eq "true"
 
 # winget (and the installers it invokes) return non-zero exit codes for
 # conditions that are not actual failures. Treat these as success so the
@@ -606,11 +607,17 @@ function Invoke-Main {
     # Launch post-install apps
     Start-PostInstallApps
 
-    # Web authentication (Edge is preinstalled on Windows)
-    Connect-GitHubWeb
+    # Authentication steps need a human; NONINTERACTIVE=true skips them (e.g. for sandbox runs)
+    if ($script:NonInteractive) {
+        Write-Warn "NONINTERACTIVE set: skipping GitHub web and CLI authentication"
+    }
+    else {
+        # Web authentication (Edge is preinstalled on Windows)
+        Connect-GitHubWeb
 
-    # Setup environments
-    Connect-GH
+        # Setup environments
+        Connect-GH
+    }
     Copy-Repos
 
     # PWA setup is intentionally disabled until the booth workflow needs it again.
